@@ -22,7 +22,11 @@
   "routes": [
     {
       "src": "/build/(.*)",
-      "dest": "/public/build/$1"
+      "dest": "/$1"
+    },
+    {
+      "src": "/(images|img|css|js|fonts|storage|favicon\\.ico)(.*)",
+      "dest": "/public/$1$2"
     },
     {
       "src": "/(.*)",
