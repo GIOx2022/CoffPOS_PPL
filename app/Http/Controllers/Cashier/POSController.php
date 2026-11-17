@@ -10,6 +10,7 @@ use App\Models\Transaction;
 use App\Models\TransactionItem;
 use App\Services\TransactionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Log;
@@ -221,8 +222,8 @@ class POSController extends Controller
      */
     public function processTransaction(Request $request)
     {
-        \Log::info('Process transaction called', [
-            'user_id' => auth()->id(),
+        Log::info('Process transaction called', [
+            'user_id' => Auth::id(),
             'request_data' => $request->all()
         ]);
         
@@ -529,9 +530,9 @@ class POSController extends Controller
             );
 
             // Apply loyalty discount if applicable
-            if ($validated['customer_id'] && $validated['loyalty_points_used']) {
+            if (!empty($validated['customer_id']) && !empty($validated['loyalty_points_used'])) {
                 $customer = Customer::find($validated['customer_id']);
-                if ($customer && $customer->points >= $validated['loyalty_points_used']) {
+                if ($customer && $customer->loyalty_points >= $validated['loyalty_points_used']) {
                     $loyaltyDiscount = min($validated['loyalty_points_used'], $totals['total'] * 0.5);
                     $totals['loyalty_discount'] = $loyaltyDiscount;
                     $totals['total'] -= $loyaltyDiscount;
@@ -575,7 +576,7 @@ class POSController extends Controller
                     'name' => $customer->name,
                     'phone' => $customer->phone,
                     'email' => $customer->email,
-                    'points' => $customer->loyalty_points, // Updated to correct column
+                    'points' => $customer->loyalty_points,
                     'total_spent' => $totalSpent,
                     'total_transactions' => $totalTransactions,
                     'average_transaction' => $totalTransactions > 0 ? $totalSpent / $totalTransactions : 0,
@@ -607,7 +608,7 @@ class POSController extends Controller
                 'name' => $validated['name'],
                 'phone' => $validated['phone'],
                 'email' => $validated['email'],
-                'loyalty_points' => 0 // Set default points
+                'loyalty_points' => 0
             ]);
 
             return response()->json([
@@ -730,7 +731,7 @@ class POSController extends Controller
         try {
             // Get customer if provided
             $customer = null;
-            if ($validated['customer_id']) {
+            if (!empty($validated['customer_id'])) {
                 $customer = Customer::find($validated['customer_id']);
             }
 
@@ -823,7 +824,7 @@ class POSController extends Controller
                 'items' => array_values($cart),
                 'payment' => [
                     'method' => 'digital',
-                    'amount' => $totalAmount, // Set correct payment amount
+                    'amount' => $totalAmount,
                     'reference' => $validated['order_id']
                 ],
                 'discount_amount' => 0,
